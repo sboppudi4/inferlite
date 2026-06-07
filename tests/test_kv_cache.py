@@ -1,0 +1,55 @@
+from __future__ import annotations
+
+import pytest
+
+from inferlite.cache import ContiguousKVCache, KVCacheConfig, PagedKVCache
+
+
+def _config() -> KVCacheConfig:
+    return KVCacheConfig(num_layers=4, num_heads=8, head_dim=16, dtype_bytes=2, block_size=8)
+
+
+def test_contiguous_allocation_rounding() -> None:
+    cache = ContiguousKVCache(_config(), chunk_size_tokens=16)
+    alloc = cache.allocate("r1", seq_len=17)
+    assert alloc.token_capacity == 32
+    assert alloc.bytes_reserved >= alloc.bytes_used
+    assert cache.stats()["active_requests"] == 1
+
+
+def test_paged_allocation_and_free_reuses_blocks() -> None:
+    cache = PagedKVCache(_config(), total_blocks=10)
+    a1 = cache.allocate("r1", seq_len=9)  # 2 blocks
+    pages_before_free = cache.request_pages("r1")
+    assert len(pages_before_free) == 2
+    assert a1.token_capacity == 16
+
+    cache.free("r1")
+    assert cache.request_pages("r1") == []
+    free_after = cache.free_block_count()
+    assert free_after == 10
+
+    a2 = cache.allocate("r2", seq_len=8)  # 1 block
+    assert a2.token_capacity == 8
+    assert cache.free_block_count() == 9
+
+
+def test_paged_raises_when_out_of_blocks() -> None:
+    cache = PagedKVCache(_config(), total_blocks=1)
+    cache.allocate("r1", seq_len=8)
+    with pytest.raises(MemoryError):
+        cache.allocate("r2", seq_len=9)
+
+
+def test_paged_and_contiguous_bytes_used_match_for_same_seq_len() -> None:
+    cfg = _config()
+    contiguous = ContiguousKVCache(cfg, chunk_size_tokens=8)
+    paged = PagedKVCache(cfg, total_blocks=100)
+    seq_len = 19
+    c = contiguous.allocate("r1", seq_len)
+    p = paged.allocate("r1", seq_len)
+    assert c.bytes_used == p.bytes_used
+    assert p.bytes_reserved == p.token_capacity * (
+        2 * cfg.num_layers * cfg.num_heads * cfg.head_dim * cfg.dtype_bytes
+    )
+
