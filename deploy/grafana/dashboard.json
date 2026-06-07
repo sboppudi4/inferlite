@@ -1,0 +1,68 @@
+{
+  "title": "InferLite Inference Overview",
+  "panels": [
+    {
+      "title": "Request Latency (p50/p95/p99)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(inferlite_request_latency_seconds_bucket[5m])) by (le,endpoint,tier))"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(inferlite_request_latency_seconds_bucket[5m])) by (le,endpoint,tier))"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(inferlite_request_latency_seconds_bucket[5m])) by (le,endpoint,tier))"
+        }
+      ]
+    },
+    {
+      "title": "TTFT (p95)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(inferlite_ttft_seconds_bucket[5m])) by (le,endpoint,tier))"
+        }
+      ]
+    },
+    {
+      "title": "TPOT (p95)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(inferlite_tpot_seconds_bucket[5m])) by (le,endpoint,tier))"
+        }
+      ]
+    },
+    {
+      "title": "Token Throughput",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(inferlite_prefill_tokens_total[1m])"
+        },
+        {
+          "expr": "rate(inferlite_decode_tokens_total[1m])"
+        }
+      ]
+    },
+    {
+      "title": "Queue Depth",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "inferlite_queue_depth"
+        }
+      ]
+    },
+    {
+      "title": "KV Cache Utilization",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "inferlite_kv_cache_utilization"
+        }
+      ]
+    }
+  ]
+}
