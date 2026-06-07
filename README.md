@@ -1,5 +1,9 @@
 # InferLite
 
+[![ci](https://github.com/sboppudi4/inferlite/actions/workflows/ci.yml/badge.svg)](https://github.com/sboppudi4/inferlite/actions/workflows/ci.yml)
+[![python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
+[![license](https://img.shields.io/badge/license-MIT-green.svg)](#license)
+
 InferLite is a Python-first LLM inference server that implements the core serving ideas used in
 modern production systems:
 
