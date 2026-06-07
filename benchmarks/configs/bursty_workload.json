@@ -1,0 +1,26 @@
+{
+  "name": "bursty_priority_workload",
+  "duration_s": 45,
+  "qps": 1.0,
+  "burst": {
+    "enabled": true,
+    "burst_every_s": 10,
+    "burst_qps": 8.0,
+    "burst_duration_s": 3
+  },
+  "model": "gpt2",
+  "prompt_length_tokens": {
+    "min": 64,
+    "max": 512
+  },
+  "output_length_tokens": {
+    "min": 32,
+    "max": 160
+  },
+  "priority_mix": {
+    "paid": 0.3,
+    "free": 0.5,
+    "batch": 0.2
+  }
+}
+
