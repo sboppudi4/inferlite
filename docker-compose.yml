@@ -1,0 +1,15 @@
+services:
+  inferlite:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - INFERLITE_DEFAULT_MODEL=gpt2
+      - INFERLITE_ADMIN_BOOTSTRAP_SECRET=inferlite-admin
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
