@@ -46,7 +46,38 @@ or the comparison is meaningless.
 
 ## Throughput / latency
 
-_Paste the table from `benchmarks/results/benchmark_report.md` here._
+### Measured: CPU smoke run (real, reproducible)
+
+Backend: `inferlite` (`/v1/completions`) vs `naive` (`/v1/completions/baseline`). Model
+`distilgpt2`, CPU only, workload `benchmarks/configs/cpu_smoke_workload.json` (8 requests, qps≈2,
+16–32 output tokens, `seed=7`). **Both runners were warmed once before timing** so the numbers
+reflect steady-state compute, not one-time model download/load. vLLM is omitted — it needs
+Linux + GPU and does not run in this environment.
+
+| backend | req_ok | tok/s | p50 latency (s) | p95 latency (s) | p95 TTFT (s) | p95 TPOT (s) |
+|---|---:|---:|---:|---:|---:|---:|
+| inferlite | 8/8 | 49.3 | 0.431 | 0.513 | 0.205 | 0.011 |
+| naive | 8/8 | 49.4 | 0.468 | 0.568 | 0.227 | 0.015 |
+
+**Honest reading of this result:**
+
+- The two backends are **within noise of each other** (inferlite is marginally lower-latency). This
+  is the *expected* outcome, not a disappointment: the load generator fires requests sequentially,
+  so InferLite's static batcher only ever sees batch size 1 and its batching advantage cannot
+  appear. See `docs/design.md` §5 — the continuous-batching win requires concurrent in-flight
+  requests, which in turn needs a GPU to be worth measuring.
+- Aggregate `tok/s` here is partly **arrival-rate bound** (qps≈2 pacing), so per-request **latency**
+  is the more meaningful column for this workload.
+- Reproduce: `make bench-cpu` (see below) or the two `run_benchmark.py` invocations with
+  `--workload benchmarks/configs/cpu_smoke_workload.json`.
+
+Charts for this run are generated locally under `benchmarks/results/` (git-ignored):
+`throughput_tokens_per_s.png`, `latency_p95_s.png`, `ttft_p95_s.png`.
+
+### Pending: GPU matrix (inferlite vs naive vs vLLM, concurrent load)
+
+This is the run that actually exercises continuous batching, on real hardware. Numbers are `TBD`
+until run on a GPU host; do **not** read CPU smoke numbers as a substitute.
 
 | backend | workload | req_ok | tok/s | p95 latency (s) | p95 TTFT (s) | p95 TPOT (s) |
 |---|---|---:|---:|---:|---:|---:|
@@ -56,12 +87,6 @@ _Paste the table from `benchmarks/results/benchmark_report.md` here._
 | naive | bursty | TBD | TBD | TBD | TBD | TBD |
 | inferlite | bursty | TBD | TBD | TBD | TBD | TBD |
 | vllm | bursty | TBD | TBD | TBD | TBD | TBD |
-
-Charts (committed under `benchmarks/results/` after a run):
-
-- `throughput_tokens_per_s.png`
-- `latency_p95_s.png`
-- `ttft_p95_s.png`
 
 ## KV cache fragmentation (measured, no GPU required)
 

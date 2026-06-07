@@ -1,0 +1,19 @@
+{
+  "name": "cpu_smoke_workload",
+  "duration_s": 4,
+  "qps": 2.0,
+  "model": "distilgpt2",
+  "prompt_length_tokens": {
+    "min": 16,
+    "max": 48
+  },
+  "output_length_tokens": {
+    "min": 16,
+    "max": 32
+  },
+  "priority_mix": {
+    "paid": 0.2,
+    "free": 0.6,
+    "batch": 0.2
+  }
+}
