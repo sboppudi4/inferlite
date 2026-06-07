@@ -20,6 +20,10 @@ arrival and next-token emission?
 The repository is designed so an ML infra hiring manager can read scheduler and cache code in
 isolation and understand the trade-offs, limitations, and benchmark evidence.
 
+For the reasoning behind each design decision (and an honest list of what is and isn't wired up yet),
+see **[`docs/design.md`](docs/design.md)**. For a narrative walkthrough, see the
+**[blog post](docs/blog-post.md)**.
+
 ## Architecture
 
 ```mermaid
@@ -108,11 +112,21 @@ Environment variables are documented in `.env.example`.
 InferLite includes a reproducible benchmark harness under `benchmarks/` with workload configs,
 runner scripts, plotting, and report generation.
 
-See:
+**Measured result (CPU-only, reproducible):** paging the KV cache into 16-token blocks instead of
+64-token contiguous chunks cuts wasted KV memory by **~77%** and lifts utilization from **80.5% to
+94.6%** on short variable-length workloads. Full table, method, and the GPU throughput report
+scaffold: **[`benchmarks/RESULTS.md`](benchmarks/RESULTS.md)**.
 
-- `benchmarks/README.md`
-- `benchmarks/configs/default_workload.json`
-- `benchmarks/configs/bursty_workload.json`
+```bash
+# reproduce the fragmentation numbers (no GPU required)
+python benchmarks/scripts/kv_cache_memory_benchmark.py --requests 512 --max-seq-len 256 --seed 7
+```
+
+See also:
+
+- [`benchmarks/README.md`](benchmarks/README.md) — how to run the full inferlite/naive/vllm matrix
+- [`benchmarks/RESULTS.md`](benchmarks/RESULTS.md) — results and reproduction steps
+- `benchmarks/configs/default_workload.json`, `benchmarks/configs/bursty_workload.json`
 
 ## Deployment
 
