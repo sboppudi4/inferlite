@@ -160,14 +160,14 @@ InferLite is not:
 
 ## Roadmap status
 
-- Phase 0: foundation and naive baseline complete
-- Phase 1: model runner and static batching complete
-- Phase 2: contiguous and paged KV cache complete
-- Phase 3: continuous batching scheduler complete
-- Phase 4: API + multi-tenant auth/rate limits complete
-- Phase 5: metrics and tracing complete
-- Phase 6: benchmark harness complete
-- Phase 7: shipping polish complete
+- Phase 0: foundation and naive baseline 
+- Phase 1: model runner and static batching 
+- Phase 2: contiguous and paged KV cache 
+- Phase 3: continuous batching scheduler 
+- Phase 4: API + multi-tenant auth/rate limits 
+- Phase 5: metrics and tracing
+- Phase 6: benchmark harness 
+- Phase 7: shipping polish
 
 ## License
 
