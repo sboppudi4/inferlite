@@ -1,0 +1,42 @@
+# One-command observability stack: InferLite (CPU) + Prometheus + Grafana.
+# Grafana auto-provisions the Prometheus datasource and the InferLite dashboard.
+#
+#   docker compose -f docker-compose.observability.yml up --build
+#
+# Then open http://localhost:3000 (anonymous admin enabled) -> InferLite Inference Overview.
+# Generate load so panels populate (see benchmarks/RESULTS.md), then screenshot.
+
+services:
+  inferlite:
+    build:
+      context: .
+      dockerfile: Dockerfile.cpu
+    ports:
+      - "8000:8000"
+    environment:
+      - INFERLITE_DEFAULT_MODEL=gpt2
+      - INFERLITE_ADMIN_BOOTSTRAP_SECRET=inferlite-admin
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deploy/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - inferlite
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=false
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
