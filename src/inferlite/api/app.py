@@ -13,13 +13,19 @@ from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from inferlite.api.schemas import (
     AdminCreateKeyRequest,
     AdminKeyResponse,
-    ChatMessage,
     ChatCompletionRequest,
+    ChatMessage,
     CompletionRequest,
     CompletionResponse,
     HealthResponse,
 )
-from inferlite.auth import APIKeyRecord, APIKeyStore, AuthService, PerKeyRateLimiter, auth_dependency
+from inferlite.auth import (
+    APIKeyRecord,
+    APIKeyStore,
+    AuthService,
+    PerKeyRateLimiter,
+    auth_dependency,
+)
 from inferlite.config import settings
 from inferlite.engine.model_runner import HuggingFaceModelRunner
 from inferlite.engine.naive_runner import NaivePipelineRunner
@@ -255,7 +261,9 @@ async def admin_create_key(
 
 
 @app.get("/admin/keys", response_model=list[AdminKeyResponse])
-async def admin_list_keys(x_admin_secret: str | None = Header(default=None)) -> list[AdminKeyResponse]:
+async def admin_list_keys(
+    x_admin_secret: str | None = Header(default=None),
+) -> list[AdminKeyResponse]:
     if x_admin_secret != settings.admin_bootstrap_secret:
         raise HTTPException(status_code=401, detail="invalid admin secret")
     return [

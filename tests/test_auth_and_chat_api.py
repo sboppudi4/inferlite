@@ -66,7 +66,9 @@ def test_rate_limit() -> None:
     key = _create_key(client, tier="free", rpm=1)
     payload = {"model": "gpt2", "prompt": "hello", "max_tokens": 4}
     first = client.post("/v1/completions", headers={"Authorization": f"Bearer {key}"}, json=payload)
-    second = client.post("/v1/completions", headers={"Authorization": f"Bearer {key}"}, json=payload)
+    second = client.post(
+        "/v1/completions", headers={"Authorization": f"Bearer {key}"}, json=payload
+    )
     assert first.status_code == 200
     assert second.status_code == 429
 

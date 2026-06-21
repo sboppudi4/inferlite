@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from fastapi import Header, HTTPException
 
 from inferlite.auth.models import APIKeyRecord
@@ -24,7 +26,7 @@ class AuthService:
         return record
 
 
-def auth_dependency(service: AuthService):
+def auth_dependency(service: AuthService) -> Callable[[str | None], APIKeyRecord]:
     def _dep(authorization: str | None = Header(default=None)) -> APIKeyRecord:
         return service.authorize(authorization)
 

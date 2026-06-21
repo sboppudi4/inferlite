@@ -39,7 +39,7 @@ class CompletionResponse(BaseModel):
     @classmethod
     def from_generations(
         cls, model: str, generated: list[str], prompt_tokens: int, completion_tokens: int
-    ) -> "CompletionResponse":
+    ) -> CompletionResponse:
         return cls(
             id=f"cmpl-{uuid.uuid4().hex}",
             created=int(time.time()),

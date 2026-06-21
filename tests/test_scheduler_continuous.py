@@ -18,13 +18,17 @@ def test_continuous_batching_admits_new_requests_between_steps() -> None:
             enable_preemption=False,
         )
         await scheduler.submit(
-            GenerationRequest("r1", "hello", max_new_tokens=3, priority=Priority.FREE, arrived_at=0.0)
+            GenerationRequest(
+                "r1", "hello", max_new_tokens=3, priority=Priority.FREE, arrived_at=0.0
+            )
         )
         first = await scheduler.run_step()
         assert first.request_ids == ["r1"]
 
         await scheduler.submit(
-            GenerationRequest("r2", "world", max_new_tokens=2, priority=Priority.FREE, arrived_at=1.0)
+            GenerationRequest(
+                "r2", "world", max_new_tokens=2, priority=Priority.FREE, arrived_at=1.0
+            )
         )
         second = await scheduler.run_step()
         assert set(second.request_ids) == {"r1", "r2"}
@@ -39,8 +43,12 @@ def test_higher_priority_can_preempt_when_pool_full() -> None:
             decode_step_fn=_noop_decode_step,
             enable_preemption=True,
         )
-        low = GenerationRequest("low", "a", max_new_tokens=5, priority=Priority.BATCH, arrived_at=0.0)
-        high = GenerationRequest("high", "b", max_new_tokens=1, priority=Priority.PAID, arrived_at=1.0)
+        low = GenerationRequest(
+            "low", "a", max_new_tokens=5, priority=Priority.BATCH, arrived_at=0.0
+        )
+        high = GenerationRequest(
+            "high", "b", max_new_tokens=1, priority=Priority.PAID, arrived_at=1.0
+        )
         await scheduler.submit(low)
         s1 = await scheduler.run_step()
         assert s1.request_ids == ["low"]

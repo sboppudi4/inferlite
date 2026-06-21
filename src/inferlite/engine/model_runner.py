@@ -36,7 +36,7 @@ class HuggingFaceModelRunner:
 
         model = await asyncio.to_thread(AutoModelForCausalLM.from_pretrained, model_name)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        model = model.to(device)
+        model = model.to(device)  # type: ignore[arg-type]
         model.eval()
         return _ModelBundle(model=model, tokenizer=tokenizer, device=device)
 
@@ -72,7 +72,7 @@ class HuggingFaceModelRunner:
 
         def _run_generate() -> torch.Tensor:
             with torch.inference_mode():
-                return model.generate(
+                return model.generate(  # type: ignore[no-any-return]
                     input_ids=input_ids,
                     attention_mask=attention_mask,
                     max_new_tokens=max_new_tokens,

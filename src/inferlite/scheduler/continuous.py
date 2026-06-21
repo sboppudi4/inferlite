@@ -5,7 +5,7 @@ import heapq
 import itertools
 from collections.abc import Awaitable, Callable
 
-from inferlite.scheduler.types import GenerationRequest, Priority, ScheduledBatch
+from inferlite.scheduler.types import GenerationRequest, ScheduledBatch
 
 DecodeStepFn = Callable[[list[GenerationRequest]], Awaitable[None]]
 
