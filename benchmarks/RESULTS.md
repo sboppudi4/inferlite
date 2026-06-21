@@ -59,6 +59,8 @@ Linux + GPU and does not run in this environment.
 | inferlite | 8/8 | 49.3 | 0.431 | 0.513 | 0.205 | 0.011 |
 | naive | 8/8 | 49.4 | 0.468 | 0.568 | 0.227 | 0.015 |
 
+![InferLite vs. naive baseline latency (CPU smoke): p50/p95 latency and p95 TTFT, within noise](../docs/assets/cpu_smoke_latency.png)
+
 **Honest reading of this result:**
 
 - The two backends are **within noise of each other** (inferlite is marginally lower-latency). This
@@ -71,8 +73,10 @@ Linux + GPU and does not run in this environment.
 - Reproduce: `make bench-cpu` (see below) or the two `run_benchmark.py` invocations with
   `--workload benchmarks/configs/cpu_smoke_workload.json`.
 
-Charts for this run are generated locally under `benchmarks/results/` (git-ignored):
-`throughput_tokens_per_s.png`, `latency_p95_s.png`, `ttft_p95_s.png`.
+The committed latency chart above lives at `docs/assets/cpu_smoke_latency.png`; regenerate it with
+`python -m benchmarks.scripts.plot_cpu_smoke` after a CPU run. The per-metric charts
+(`throughput_tokens_per_s.png`, `latency_p95_s.png`, `ttft_p95_s.png`) are written under
+`benchmarks/results/` (git-ignored) by `plot_results.py`.
 
 ### Pending: GPU matrix (inferlite vs naive vs vLLM, concurrent load)
 

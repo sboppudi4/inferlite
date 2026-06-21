@@ -121,6 +121,13 @@ runner scripts, plotting, and report generation.
 94.6%** on short variable-length workloads. Full table, method, and the GPU throughput report
 scaffold: **[`benchmarks/RESULTS.md`](benchmarks/RESULTS.md)**.
 
+![Paged vs. contiguous KV cache: utilization rises and reserved-but-unused memory drops ~77%](docs/assets/kv_cache_fragmentation.png)
+
+> Generated directly from the allocators — no hand-edited numbers. Regenerate with
+> `python -m benchmarks.scripts.plot_kv_cache`. The throughput-vs-vLLM comparison is deliberately
+> left as `TBD` in [`RESULTS.md`](benchmarks/RESULTS.md) until it can be run on a GPU host; a
+> benchmark you can't reproduce is worse than no benchmark.
+
 ```bash
 # reproduce the fragmentation numbers (no GPU required)
 python benchmarks/scripts/kv_cache_memory_benchmark.py --requests 512 --max-seq-len 256 --seed 7
@@ -168,6 +175,39 @@ InferLite is not:
 - Phase 5: metrics and tracing
 - Phase 6: benchmark harness 
 - Phase 7: shipping polish
+
+## Key Engineering Tradeoffs
+
+Every decision here was made for a reason, and most of them cost something. The full rationale lives
+in [`docs/design.md`](docs/design.md); the headline tradeoffs:
+
+- **Python-first, not CUDA.** The goal is a legible implementation of *scheduler and cache behavior*,
+  not peak throughput. Cost: InferLite will lose to vLLM on absolute tokens/sec and never claims
+  otherwise. Benefit: the continuous-batching and paging logic is readable end-to-end.
+
+- **KV cache modeled as byte accounting, not a live tensor pool.** `PagedKVCache` implements the part
+  that actually governs fragmentation — a block-ID free list plus per-request page tables — and
+  computes reserved-vs-used bytes, rather than allocating real fp16 tensors. Cost: it measures memory
+  *accounting*, not attention kernels, so it can't report wall-clock latency. Benefit: the
+  fragmentation result is deterministic, runs in milliseconds on any CPU with no GPU, and the quantity
+  it measures (internal fragmentation) is exactly the one the data structure controls — so the
+  ~77% waste reduction transfers to a real allocator even though absolute latency does not.
+
+- **Generation offloaded with `asyncio.to_thread`, not a process pool.** `model.generate()` is the
+  blocking, compute-heavy call. Running it on the event loop would stall request admission and SSE
+  streaming. Offloading to a worker thread keeps the loop responsive; because PyTorch releases the
+  GIL inside its native kernels, that thread does real compute concurrently with the loop. Cost: pure
+  *Python* work is still GIL-serialized, so this buys loop responsiveness and I/O overlap, not
+  multi-core Python parallelism — a process pool would be the move only if generation were
+  Python-bound, which it isn't.
+
+- **16-token paged blocks vs. 64-token contiguous chunks.** Smaller blocks cap worst-case internal
+  waste at `block_size − 1` tokens instead of `chunk_size − 1`. Cost: more page-table bookkeeping per
+  request. Benefit: the utilization win shown above, largest on short, variable-length workloads.
+
+- **SQLite for API keys and rate-limit state.** Zero-ops, single-file, fine for a single-VM reference
+  deployment. Cost: not horizontally scalable — a multi-node deployment would swap in Redis/Postgres
+  behind the same `APIKeyStore` interface.
 
 ## License
 

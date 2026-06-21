@@ -53,3 +53,40 @@ def test_paged_and_contiguous_bytes_used_match_for_same_seq_len() -> None:
         2 * cfg.num_layers * cfg.num_heads * cfg.head_dim * cfg.dtype_bytes
     )
 
+
+@pytest.mark.parametrize("seq_len", [0, -1])
+def test_allocators_reject_nonpositive_seq_len(seq_len: int) -> None:
+    with pytest.raises(ValueError):
+        ContiguousKVCache(_config()).allocate("r1", seq_len)
+    with pytest.raises(ValueError):
+        PagedKVCache(_config(), total_blocks=4).allocate("r1", seq_len)
+
+
+@pytest.mark.parametrize("total_blocks", [0, -3])
+def test_paged_rejects_nonpositive_total_blocks(total_blocks: int) -> None:
+    with pytest.raises(ValueError):
+        PagedKVCache(_config(), total_blocks=total_blocks)
+
+
+def test_paged_free_unknown_request_is_noop() -> None:
+    cache = PagedKVCache(_config(), total_blocks=4)
+    cache.free("never-allocated")  # must not raise or leak phantom blocks
+    assert cache.free_block_count() == 4
+    assert cache.request_pages("never-allocated") == []
+
+
+def test_utilization_of_empty_cache_is_one() -> None:
+    assert ContiguousKVCache(_config()).utilization() == 1.0
+    assert PagedKVCache(_config(), total_blocks=4).utilization() == 1.0
+
+
+def test_paged_internal_fragmentation_bounded_by_block_size() -> None:
+    cfg = _config()  # block_size=8
+    cache = PagedKVCache(cfg, total_blocks=16)
+    alloc = cache.allocate("r1", seq_len=17)  # 3 blocks -> capacity 24, waste = 7 tokens
+    wasted_tokens = (alloc.bytes_reserved - alloc.bytes_used) // (
+        2 * cfg.num_layers * cfg.num_heads * cfg.head_dim * cfg.dtype_bytes
+    )
+    assert wasted_tokens == 7
+    assert wasted_tokens < cfg.block_size
+
